@@ -1,0 +1,62 @@
+nl_to_sql_llm/
+│
+├── src/
+│   │
+│   ├── main.py
+│   │
+│   ├── database/
+│   │   ├── connection.py
+│   │   ├── schema_loader.py
+│   │   └── query_executor.py
+│   │
+│   ├── llm/
+│   │   ├── ollama_client.py
+│   │   ├── prompt_builder.py
+│   │   └── sql_validator.py
+│   │
+│   ├── gui/
+│   │   ├── main_window.py
+│   │   └── results_table.py
+│   │
+│   ├── models/
+│   │   └── database_schema.py
+│   │
+│   └── utils/
+│       ├── config.py
+│       └── logger.py
+│
+├── tests/
+│   ├── test_connection.py
+│   ├── test_schema.py
+│   └── test_llm.py
+│
+├── requirements.txt
+├── README.md
+└── .gitignore
+
+
+Usuário
+   │
+   ▼
+GUI
+   │
+   ▼
+Prompt Builder
+   │
+   ▼
+Qwen (Ollama)
+   │
+   ▼
+SQL Gerado
+   │
+   ▼
+Validador SQL
+   │
+   ▼
+Executor SQL
+   │
+   ▼
+Resultado
+   │
+   ▼
+GUI
