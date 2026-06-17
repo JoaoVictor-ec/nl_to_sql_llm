@@ -17,9 +17,10 @@ from gui.DataBaseConfigWindow import (
     DatabaseConfigDialog
 )
 from llm.OllamaClient import OllamaClient
-from DataBase.connection import DatabaseConnection
-from DataBase.SchemaLoader import SchemaLoader
-from DataBase.QueryExecutor import QueryExecutor
+from llm.SqlWorker import SQLWorker
+
+from PySide6.QtCore import QThread
+
 
 class MainWindow(QMainWindow):
 
@@ -165,11 +166,10 @@ class MainWindow(QMainWindow):
         self.database_button.clicked.connect(self.open_database_config)
         self.query_button.clicked.connect(self.generate_sql)
 
-        # ==================================================
-        # Dados fictícios para teste visual
-        # ==================================================
+        self.status_output.setText(
+            "Sistema iniciado."
+        )
 
-        self.populate_test_data()
 
     def open_database_config(self):
 
@@ -183,44 +183,6 @@ class MainWindow(QMainWindow):
                 "Banco configurado com sucesso."
             )
 
-    def populate_test_data(self):
-
-        self.sql_output.setText(
-            """
-SELECT c.nome,
-       COUNT(*) AS total
-FROM CLIENTE c
-GROUP BY c.nome;
-            """.strip()
-        )
-
-        self.status_output.setText(
-            "Sistema iniciado com sucesso."
-        )
-
-        data = [
-            [1, "João", 15],
-            [2, "Maria", 12],
-            [3, "Carlos", 9]
-        ]
-
-        self.result_table.setRowCount(len(data))
-
-        for row_idx, row in enumerate(data):
-
-            for col_idx, value in enumerate(row):
-
-                item = QTableWidgetItem(str(value))
-
-                item.setTextAlignment(Qt.AlignCenter)
-
-                self.result_table.setItem(
-                    row_idx,
-                    col_idx,
-                    item
-                )
-
-
     def generate_sql(self):
 
         if not self.db_config:
@@ -231,54 +193,64 @@ GROUP BY c.nome;
 
             return
 
-        try:
+        question = (
+            self.question_input.toPlainText()
+        )
 
-            question = (
-                self.question_input.toPlainText()
-            )
+        self.status_output.append(
+            "Gerando SQL..."
+        )
 
-            engine = (
-                DatabaseConnection
-                .create_engine_from_config(
-                    self.db_config
-                )
-            )
+        self.sql_output.clear()
+        self.result_table.clearContents()
 
-            schema = (
-                SchemaLoader
-                .load_schema(engine)
-            )
+        self.query_button.setEnabled(False)
 
-            schema_text = (
-                SchemaLoader
-                .schema_to_text(schema)
-            )
+        self.thread = QThread()
 
-            sql = self.llm.generate_sql(
-                schema_text,
-                question
-            )
-            columns, rows = QueryExecutor.execute(
-                engine,
-                sql
-            )
+        self.worker = SQLWorker(
+            self.llm,
+            self.db_config,
+            question
+        )
 
-            self.sql_output.setText(sql)
+        self.worker.moveToThread(
+            self.thread
+        )
 
-            self.populate_results(
-                columns,
-                rows
-            )
+        self.thread.started.connect(
+            self.worker.run
+        )
 
-            self.status_output.append(
-                "SQL gerado com sucesso."
-            )
+        self.worker.finished.connect(
+            self.on_sql_generated
+        )
 
-        except Exception as e:
+        self.worker.error.connect(
+            self.on_sql_error
+        )
 
-            self.status_output.append(
-                f"Erro: {e}"
-            )
+        self.worker.finished.connect(
+            self.thread.quit
+        )
+
+        self.worker.finished.connect(
+            self.worker.deleteLater
+        )
+
+        self.worker.error.connect(
+            self.worker.deleteLater
+        )
+
+        self.thread.finished.connect(
+            self.thread.deleteLater
+        )
+        self.worker.error.connect(
+            self.thread.quit
+        )
+
+        self.thread.start()    
+    
     def populate_results(self, columns, rows):
 
         self.result_table.clear()
@@ -312,3 +284,30 @@ GROUP BY c.nome;
         self.result_table.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch
         )
+
+    #callbacks
+
+    def on_sql_generated(self, result):
+
+        self.sql_output.setText(
+            result["sql"]
+        )
+
+        self.populate_results(
+            result["columns"],
+            result["rows"]
+        )
+
+        self.status_output.append(
+            "Consulta executada com sucesso."
+        )
+
+        self.query_button.setEnabled(True)
+    
+    def on_sql_error(self, error):
+
+        self.status_output.append(
+            f"Erro: {error}"
+        )
+
+        self.query_button.setEnabled(True)
