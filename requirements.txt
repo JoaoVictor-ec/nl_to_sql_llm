@@ -1,6 +1,7 @@
-pip install ollama
-pip install sqlalchemy
-pip install pymysql
-pip install psycopg2-binary
-pip install pandas
-pip install pyside6
+#Bibliotecas usadas:
+ollama
+sqlalchemy
+pymysql
+psycopg2-binary
+pandas
+PySide6
