@@ -54,8 +54,8 @@ Interface exibe resultados
 
 ### 1. Clonar o repositório
 
-git clone <https://github.com/JoaoVictor-ec/nl_to_sql_llm>
-cd <nl_to_sql_llm>
+- git clone <https://github.com/JoaoVictor-ec/nl_to_sql_llm>
+- cd <nl_to_sql_llm>
 
 ---
 
