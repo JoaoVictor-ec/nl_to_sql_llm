@@ -3,10 +3,12 @@ from ollama import chat
 
 class OllamaClient:
 
+    #define o modelo que será usado pelo ollama
     def __init__(self, model="qwen3:14b"):
 
         self.model = model
 
+    # recebe as o prompt e envia ao modelo, retorna o texto puro de resposta
     def ask(self, prompt):
 
         response = chat(
@@ -21,6 +23,7 @@ class OllamaClient:
 
         return response["message"]["content"]
 
+    # Função que constroi e retorna o prompt, recebe o schema do banco de dados, e a pergunta do usuário
     def generate_sql(
         self,
         schema_text,
